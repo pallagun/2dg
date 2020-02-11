@@ -11,6 +11,7 @@
 (require '2dg-segment)
 (require '2dg-rect)
 (require '2dg-path)
+(require '2dg-pixel)
 
 (provide '2dg)
 ;;; 2dg.el ends here
