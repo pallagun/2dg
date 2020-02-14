@@ -13,12 +13,10 @@
 (defclass 2dg-rect ()
   ((x-min :initarg :x-min
           :accessor 2dg-x-min
-          :type float
-          :initform 0.0)
+          :type float)
    (y-min :initarg :y-min
           :accessor 2dg-y-min
-          :type float
-          :initform 0.0)
+          :type float)
    (y-max :initarg :y-max
           :type float
           :accessor 2dg-y-max)
