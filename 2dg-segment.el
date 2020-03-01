@@ -17,6 +17,14 @@
         :accessor 2dg-end
         :type 2dg-point))
   :documentation "2d Line segment that can go in any direction (omnidirectional)")
+(defun 2dg-segment- (x1 y1 x2 y2)
+  "Build a 2dg-segment from X1 Y1 to X2 Y2.
+
+Equivalent of (2dg-segment :start (2dg-point :x X1 :y Y1)
+:end (2dg-point :x X2 :y Y2)).  This function is mostly to spare
+a bit of typing."
+  (2dg-segment :start (2dg-point :x (float x1) :y (float y1))
+               :end (2dg-point :x (float x2) :y (float y2))))
 (cl-defmethod 2dg-pprint ((segment 2dg-segment))
   "Return a stringified version of SPAN for human eyes."
   (with-slots (start end) segment
@@ -263,15 +271,20 @@ It only has to be within an almost-zero distance."
           (t                            ; allow any part of A or B.
            (2dg-almost-zero distance)))))
 (cl-defmethod 2dg-has-intersection ((A 2dg-segment) (B 2dg-segment) &optional evaluation-mode)
-  "Does A ever intersect B."
+  "Does A ever intersect B.
+
+Note: this does handle parallel segments.
+TODO - put tests in place for this, I think I've forgotten what I did."
   (2dg-pierced-p A B
-                  (not (eq evaluation-mode 'strict))
-                  (not (or (eq evaluation-mode 'strict)
-                           (eq evaluation-mode 'stacked)))
-                  t
-                  t))
+                 (not (eq evaluation-mode 'strict))
+                 (not (or (eq evaluation-mode 'strict)
+                          (eq evaluation-mode 'stacked)))
+                 t
+                 t))
 (cl-defmethod 2dg-pierced-p ((A 2dg-segment) (B 2dg-segment) &optional allow-A-start allow-A-end allow-B-start allow-B-end)
-  "Does A pierce B at some point (not_ at end points, unless specified)."
+  "Does A pierce B at some point (not_ at end points, unless specified).
+
+Note: parallel piercing is a thing, apparently.  TODO- write tests for that."
   (let ((A-is-point (2dg-almost-zero (2dg-box-magnitude A)))
         (B-is-point (2dg-almost-zero (2dg-box-magnitude B))))
     ;; if either one has a box magnitude that's so small it indicates it's a point
@@ -372,8 +385,14 @@ Output is bounded to be between [0, 1] inclusive when BOUNDED is t."
   "Return the point along BASE-SEGMENT at the segments parametric COORDINATE."
   (with-slots (start) base-segment
     (2dg-add start
-               (2dg-scaled (2dg-characteristic-vector base-segment)
-                             coordinate))))
+             (2dg-scaled (2dg-characteristic-vector base-segment)
+                         coordinate))))
+(cl-defmethod 2dg-absolute-coordinates ((base-segment 2dg-segment) (coordinates 2dg-span))
+  "Return a segment along BASE-SEGMENT starting and ending at parametric COORDINATES."
+  (let ((char-vec (2dg-characteristic-vector base-segment)))
+    (with-slots (start) base-segment
+      (2dg-segment :start (2dg-add start (2dg-scaled char-vec (2dg-start coordinates)))
+                   :end (2dg-add start (2dg-scaled char-vec (2dg-end coordinates)))))))
 
 (cl-defmethod 2dg-get-parametric ((segment 2dg-segment) (pt 2dg-point) &optional distance-tolerance)
   "Get the parametric coordinate of PT along SEGMENT.

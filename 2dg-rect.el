@@ -24,6 +24,16 @@
           :type float
           :accessor 2dg-x-max))
   :documentation "2d rectangle")
+(defun 2dg-rect- (x-min x-max y-min y-max)
+  "Build a 2dg-rect from X-MIN, X-MAX, Y-MIN and Y-MAX.
+
+Equivalent of (2dg-rect :x-min X-MIN :x-max X-MAX :y-min Y-MIN
+:y-max Y-MAX).  This function is mostly to spare a bit of
+typing."
+  (2dg-rect :x-min (float x-min)
+            :x-max (float x-max)
+            :y-min (float y-min)
+            :y-max (float y-max)))
 (cl-defmethod 2dg-pprint ((rect 2dg-rect))
   "Return a stringified version of RECT for human eyes."
   (with-slots (x-min x-max y-min y-max) rect
@@ -103,13 +113,13 @@ The segments will be return starting at the bottom left and
 proceeding counterclockwise around the rectangle."
   (with-slots (x-min x-max y-min y-max) rect
     (list (2dg-segment :start (2dg-point :x x-min :y y-min)
-                         :end (2dg-point :x x-max :y y-min))
+                       :end (2dg-point :x x-max :y y-min))
           (2dg-segment :start (2dg-point :x x-max :y y-min)
-                         :end (2dg-point :x x-max :y y-max))
+                       :end (2dg-point :x x-max :y y-max))
           (2dg-segment :start (2dg-point :x x-max :y y-max)
-                         :end (2dg-point :x x-min :y y-max))
+                       :end (2dg-point :x x-min :y y-max))
           (2dg-segment :start (2dg-point :x x-min :y y-max)
-                         :end (2dg-point :x x-min :y y-min)))))
+                       :end (2dg-point :x x-min :y y-min)))))
 (cl-defmethod 2dg-width ((rect 2dg-rect))
   "Return the width (x-size) of RECT as a scalar."
   (with-slots (x-min x-max) rect
