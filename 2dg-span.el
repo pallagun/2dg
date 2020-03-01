@@ -15,7 +15,17 @@
    (end :initarg :end
         :accessor 2dg-end
         :type float)))
+(defun 2dg-span- (start end)
+  "Build a 2dg-span from START to END.
 
+Equivalent of (2dg-span :start START :end END).  This function is
+mostly to spare a bit of typing."
+  (2dg-span :start (float start) :end (float end)))
+(defsubst 2dg-build-span-ordered (A B)
+  "Create a 2dg-span based on A and B which is ordered."
+  (if (< A B)
+      (2dg-span :start A :end B)
+    (2dg-span :start B :end A)))
 (cl-defmethod 2dg-pprint ((span 2dg-span))
   "Return a stringified version of SPAN for human eyes."
   (format "s[%f -> %f]"

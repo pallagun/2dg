@@ -435,4 +435,27 @@
       (should (2dg-pierced-p piercer test-segment t t t t)))
     ))
 
+(ert-deftest 2dg-segment-absolute-coordinates-test ()
+  "Absolute coordinates test for segments."
+  (let ((segment (2dg-segment- 0 0 1 1)))
+    (should (2dg-almost-equal segment
+                              (2dg-absolute-coordinates segment
+                                                        (2dg-span- 0 1))))
+    (should (2dg-almost-equal (2dg-flipped segment)
+                             (2dg-absolute-coordinates segment
+                                                       (2dg-span- 1 0))))
+    (should (2dg-almost-equal (2dg-segment- 0.5 0.5 0.75 0.75)
+                              (2dg-absolute-coordinates segment
+                                                        (2dg-span- 0.5 0.75))))
+    (should (2dg-almost-equal (2dg-segment- 0.75 0.75 0.5 0.5)
+                              (2dg-absolute-coordinates segment
+                                                        (2dg-span- 0.75 0.5))))
+    (should (2dg-almost-equal (2dg-segment- 1 1 2 2)
+                              (2dg-absolute-coordinates segment
+                                                        (2dg-span- 1 2))))
+    (should (2dg-almost-equal (2dg-segment- -1 -1 -2 -2)
+                              (2dg-absolute-coordinates segment
+                                                        (2dg-span- -1 -2))))))
+
+
 (provide '2dg-segment-test)
