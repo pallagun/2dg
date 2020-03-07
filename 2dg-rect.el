@@ -34,6 +34,9 @@ typing."
             :x-max (float x-max)
             :y-min (float y-min)
             :y-max (float y-max)))
+(defsubst 2dg-rect-class-p (any)
+  "Same as (object-of-class-p ANY '2dg-rect)."
+  (object-of-class-p any '2dg-rect))
 (cl-defmethod 2dg-pprint ((rect 2dg-rect))
   "Return a stringified version of RECT for human eyes."
   (with-slots (x-min x-max y-min y-max) rect
@@ -168,12 +171,17 @@ proceeding counterclockwise around the rectangle."
   "Return the coordinates of POINT relative to BASE-RECT."
   (with-slots (x y) point
     (2dg-point :x (2dg-relative-coordinates (2dg-x-span base-rect) x)
-                 :y (2dg-relative-coordinates (2dg-y-span base-rect) y))))
+               :y (2dg-relative-coordinates (2dg-y-span base-rect) y))))
 (cl-defmethod 2dg-absolute-coordinates ((base-rect 2dg-rect) (point 2dg-point))
   "Return the absolute coordinates of POINT given relative coordinate base BASE-RECT."
   (with-slots (x y) point
     (2dg-point :x (2dg-absolute-coordinates (2dg-x-span base-rect) x)
-                 :y (2dg-absolute-coordinates (2dg-y-span base-rect) y))))
+               :y (2dg-absolute-coordinates (2dg-y-span base-rect) y))))
+(cl-defmethod 2dg-absolute-coordinates ((base-rect 2dg-rect) (segment 2dg-segment))
+  "Return the absolute coordinates of SEGMENT given relative coordinate base BASE-RECT."
+  (with-slots (start end) segment
+    (2dg-segment :start (2dg-absolute-coordinates base-rect start)
+                 :end (2dg-absolute-coordinates base-rect end))))
 (cl-defmethod 2dg-absolute-coordinates ((base-rect 2dg-rect) (relative-rect 2dg-rect))
     "Return the absolute coordinates of RELATIVE-RECT given relative coordinate base BASE-RECT."
   (let ((x-span (2dg-absolute-coordinates (2dg-x-span base-rect)

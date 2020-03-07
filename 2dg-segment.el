@@ -76,7 +76,7 @@ square which could contain this SEGMENT."
   "Return the midpoint of SEGMENT."
   (with-slots (start end) segment
     (2dg-point :x (/ (+ (2dg-x start) (2dg-x end)) 2.0)
-                 :y (/ (+ (2dg-y start) (2dg-y end)) 2.0))))
+               :y (/ (+ (2dg-y start) (2dg-y end)) 2.0))))
 (defun 2dg---distance-parallel-parametrics (A B)
   "Determine parametric coordinates for two parallel lines where they are closest.
 
