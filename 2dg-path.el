@@ -28,6 +28,9 @@
 )
 (defclass 2dg-cardinal-path (2dg-path)
   ())
+(defun 2dg-cardinal-path-class-p (any)
+  "equivalent of (object-of-class-p ANY '2dg-cardinal-path)"
+  (object-of-class-p any '2dg-cardinal-path))
 (defun 2dg---is-cardinal-path-p (points-list)
   "Return non-nil if POINTS-LIST contains a list of cardinal path points."
   (cl-loop with last-pt = (first points-list)
@@ -89,6 +92,17 @@ May return nil if PATH contains 1 or less points."
 (cl-defmethod 2dg-push ((path 2dg-path) (pt 2dg-point))
   "Modify PATH by pushing PT on to the start."
   (push pt (2dg-points path)))
+(defsubst 2dg--path-list-truncate (points start-points end-points)
+  "Return a copy of POINTS with START-POINTS and END-POINTS trimmed off the start/end."
+  (butlast (nthcdr start-points points) end-points))
+(cl-defgeneric 2dg-truncate ((path 2dg-path) (start-points integer) (end-points integer))
+  "Return a new path consisting of the points of PATH minus START-POINTS removed from the start and END-POINTS removed from the end."
+  (with-slots (points) path
+    (2dg-path :points (2dg--path-list-truncate points start-points end-points))))
+(cl-defgeneric 2dg-truncate ((path 2dg-cardinal-path) (start-points integer) (end-points integer))
+  (with-slots (points) path
+    (2dg-cardinal-path :points (2dg--path-list-truncate points start-points end-points))))
+
 (cl-defmethod 2dg-almost-equal ((A 2dg-path) (B 2dg-path) &optional tolerance)
   "Return non-nil if A and B are equal within TOLERANCE."
   (let ((a-len (2dg-num-points A))
@@ -440,11 +454,35 @@ MIN-SEGMENT-DISTANCE is a goal parameter.  The algorithm will try
 not to make any connecting segments that are shorter than this
 parameter.  No promises are made.
 "
-  (when (or (not (null min-start-segment-distance))
-            (not (null min-end-segment-distance)))
-    (error "Write this part, that will handle min start and end segment distances"))
-  (let ((points (2dg---path-cardinal start end entry-vector exit-vector min-segment-distance)))
-    (2dg-cardinal-path :points points)))
+  (let ((original-start nil)
+        (original-end nil))
+    (when min-start-segment-distance
+      (setq original-start start)
+      (setq start (2dg-add (2dg-scaled (2dg-normalized entry-vector)
+                                       min-start-segment-distance)
+                           start)))
+    (when min-end-segment-distance
+      (setq original-end end)
+      (setq end (2dg-add (2dg-scaled (2dg-normalized exit-vector)
+                                     (* -1.0 min-end-segment-distance))
+                           end)))
+    (let ((points (2dg---path-cardinal start end entry-vector exit-vector min-segment-distance)))
+      (2dg-cardinal-path :points
+                         (if original-start
+                             ;; must tack on a start point
+                             (if original-end
+                                 ;; must tack on a start and end point
+                                 (nconc (cons original-start points)
+                                        (list original-end))
+                               ;; must tack on only the start point
+                               (cons original-start points))
+                           ;; no start point needed
+                           (if original-end
+                               ;; must tack on an end point
+                               (nconc points
+                                      (list original-end))
+                             ;; no start point or end point, use points as they are
+                             points))))))
 (defun 2dg-simplified (&rest n-path-pts)
   "Take all points from N-PATH-PTS lists-of-points and simplify them.
 
