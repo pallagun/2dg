@@ -109,6 +109,8 @@ RHR => Right Hand Rule."
   ;;      (not (and (equal 0.0 x)
   ;;                (equal 0.0 y))))))
   )
+(cl-defgeneric 2dg-cardinal-displacement-p ((A 2dg-point) (B 2dg-point))
+  "Return non-nil if the displacement from A to B is a cardinal vector.")
 (cl-defmethod 2dg-cardinal-displacement-p ((A 2dg-point) (B 2dg-point))
   "Return non-nil if the displacement from A to B is a cardinal
 vector.

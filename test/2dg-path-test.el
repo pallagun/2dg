@@ -27,6 +27,15 @@
                (should
                 (2dg-almost-equal (2dg-path :points A) (2dg-path :points B)))))
 
+      ;; another weird one I ran into.
+      (let ((start (2dg-point- 38.5 32))
+            (end (2dg-point- 38.5 21))
+            (entry-vector (2dg-point- 0 1))
+            (exit-vector (2dg-point- 0 -1))
+            (min-segment-distance 1.0))
+        (let ((computed (2dg---path-cardinal start end entry-vector exit-vector min-segment-distance)))
+          (should (eq 5 (length computed)))))
+
       ;; weird one I ran into.
       (let* ((start (2dg-point- 2.25 36.75))
              (end (2dg-point- 13.0 37.0))
@@ -39,7 +48,6 @@
         (should (eq 3 (length (2dg---path-cardinal start end entry-vector exit-vector min-segment-distance))))
         (should-be-almost-equal (2dg---path-cardinal start end entry-vector exit-vector min-segment-distance)
                                 expected-path))
-
       ;; simple 90 degree
       (let ((start (2dg-point- 0 0))
             (end (2dg-point- 5 5)))
@@ -189,32 +197,42 @@
                               expected))))
 
 (ert-deftest 2dg-path-nudge-path ()
-  (let ((path-pts (list (2dg-point :x 0.0 :y 0.0)
-                        (2dg-point :x 1.0 :y 0.0)
-                        (2dg-point :x 1.0 :y 0.0)
-                        (2dg-point :x 2.0 :y 0.0))))
+  (let ((path-pts (list (2dg-point- 0 0)
+                        (2dg-point- 1 0)
+                        (2dg-point- 1 0)
+                        (2dg-point- 2 0))))
     (should (2dg-almost-equal
              (2dg-path :points (2dg-nudge-path path-pts
-                                                     3
-                                                     (2dg-point :x 0.0 :y 0.4)))
-             (2dg-path :points (list (2dg-point :x 0.0 :y 0.0)
-                                       (2dg-point :x 1.0 :y 0.0)
-                                       (2dg-point :x 1.0 :y 0.4)
-                                       (2dg-point :x 2.0 :y 0.4))))))
-  (let ((path-pts (list (2dg-point :x 0.0 :y 0.0)
-                        (2dg-point :x 1.0 :y 0.0)
-                        (2dg-point :x 1.0 :y 1.0)
-                        (2dg-point :x 2.0 :y 1.0)
-                        (2dg-point :x 2.0 :y 2.0))))
+                                               3
+                                               (2dg-point- 0 0.4)))
+             (2dg-path :points (list (2dg-point- 0 0)
+                                       (2dg-point- 1 0)
+                                       (2dg-point- 1 0.4)
+                                       (2dg-point- 2 0.4))))))
+  (let ((path-pts (list (2dg-point- 0 0)
+                        (2dg-point- 1 0)
+                        (2dg-point- 1 1)
+                        (2dg-point- 2 1)
+                        (2dg-point- 2 2))))
     (should (2dg-almost-equal
              (2dg-path :points (2dg-nudge-path path-pts
                                                      2
-                                                     (2dg-point :x 0.2 :y 0.2)))
-             (2dg-path :points (list (2dg-point :x 0.0 :y 0.0)
-                                       (2dg-point :x 1.2 :y 0.0)
-                                       (2dg-point :x 1.2 :y 1.2)
-                                       (2dg-point :x 2.0 :y 1.2)
-                                       (2dg-point :x 2.0 :y 2.0)))))))
+                                                     (2dg-point- 0.2 0.2)))
+             (2dg-path :points (list (2dg-point- 0 0)
+                                       (2dg-point- 1.2 0)
+                                       (2dg-point- 1.2 1.2)
+                                       (2dg-point- 2 1.2)
+                                       (2dg-point- 2 2))))))
+  (let ((path-pts (list (2dg-point- 0 0)
+                        (2dg-point- 1 0)
+                        (2dg-point- 1 1))))
+    (should (2dg-almost-equal
+             (2dg-path :points (2dg-nudge-path path-pts
+                                               1
+                                               (2dg-point- 0 0.1)))
+             (2dg-path :points (list (2dg-point- 0 0.1)
+                                     (2dg-point- 1 0.1)
+                                     (2dg-point- 1 1)))))))
 
 (ert-deftest 2dg-path-stretch ()
   (cl-flet ((should-be-almost-equal
@@ -297,6 +315,29 @@
                                       (2dg-point :x 2.0 :y 1.5)
                                       (2dg-point :x 2.0 :y 1.0)
                                       force-end))))
+
+    ;; ;; weird stretch case
+    ;; (progn
+    ;;   (let* ((start-pt (2dg-point- 47 27))
+    ;;          (end-pt (2dg-point- 50 14.5))
+    ;;          (points (list start-pt
+    ;;                        (2dg-point- 50 29)
+    ;;                        (2dg-point- 51 29)
+    ;;                        (2dg-point- 51 22.75)
+    ;;                        (2dg-point- 50 16.5)
+    ;;                        end-pt))
+    ;;          (force-start (2dg-point- 46 27))
+    ;;          (force-end end-pt))
+    ;;     (should-be-almost-equal (2dg---path-stretch points
+    ;;                                                 force-start
+    ;;                                                 force-end)
+    ;;                             (list force-start
+
+    ;; HERE - fix this.
+    ;; weird stretch I ran into that stopped being cardinal
+    ;; (2dg-stretch '(#s(2dg-point 47.0 27.0) #s(2dg-point 50.0 29.0) #s(2dg-point 51.0 29.0) #s(2dg-point 51.0 22.75) #s(2dg-point 50.0 22.75) #s(2dg-point 50.0 16.5) #s(2dg-point 50.0 14.5))
+    ;;          #s(2dg-point 46.0 27.0)
+    ;;          #s(2dg-point 50.0 14.5))
 
     ))
 

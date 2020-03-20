@@ -95,11 +95,17 @@ May return nil if PATH contains 1 or less points."
 (defsubst 2dg--path-list-truncate (points start-points end-points)
   "Return a copy of POINTS with START-POINTS and END-POINTS trimmed off the start/end."
   (butlast (nthcdr start-points points) end-points))
-(cl-defgeneric 2dg-truncate ((path 2dg-path) (start-points integer) (end-points integer))
-  "Return a new path consisting of the points of PATH minus START-POINTS removed from the start and END-POINTS removed from the end."
+(cl-defgeneric 2dg-truncate (path-or-pts (start-points integer) (end-points integer))
+  "Return a new path consisting of the points of PATH minus START-POINTS removed from the start and END-POINTS removed from the end.")
+(cl-defmethod 2dg-truncate ((path-pts list) (start-points integer) (end-points integer))
+  "Return a new list consisting of the points of PATH-PTS minus START-POINTS removed from the start and END-POINTS removed from the end."
+  (2dg--path-list-truncate path-pts start-points end-points))
+(cl-defmethod 2dg-truncate ((path 2dg-path) (start-points integer) (end-points integer))
+  "Return a new 2dg-path consisting of the points of PATH minus START-POINTS removed from the start and END-POINTS removed from the end."
   (with-slots (points) path
     (2dg-path :points (2dg--path-list-truncate points start-points end-points))))
-(cl-defgeneric 2dg-truncate ((path 2dg-cardinal-path) (start-points integer) (end-points integer))
+(cl-defmethod 2dg-truncate ((path 2dg-cardinal-path) (start-points integer) (end-points integer))
+  "Return a new 2dg-cardinal-path consisting of the points of PATH minus START-POINTS removed from the start and END-POINTS removed from the end."
   (with-slots (points) path
     (2dg-cardinal-path :points (2dg--path-list-truncate points start-points end-points))))
 
@@ -518,7 +524,92 @@ Remove colinear intermediary points."
     (nreverse
      (if (2dg-almost-equal last-point (first rev-s-points))
                  rev-s-points
-               (push last-point rev-s-points)))))
+       (push last-point rev-s-points)))))
+(defun 2dg-slack-simplified (path-pts slack-allowance-x slack-allowance-y)
+  "Simplify PATH-PTS by allowing changes within a slack allowance.
+
+Allow returned path to change by as much as SLACk-ALLOWANCE-X and
+SLACK-ALLOWANCE-Y.
+
+This simplifier will move points around for the purpose of having
+less points.  Start and end points will be preserved exactly."
+  ;; find any segments smaller than viewport's pixel size.
+  ;;    so this won't work. I have to do these comparisons absolutely.
+  (let ((last-path-pt)
+        (num-compacted-pts 1)
+        (num-pts 0)
+        (last-compacted-pt (first path-pts))
+        (compacted-pts (list (first path-pts))))
+    (cl-loop for real-pt in (cdr path-pts)
+             for delta = (2dg-subtract real-pt last-compacted-pt)
+             for abs-delta-x = (abs (2dg-x delta))
+             for abs-delta-y = (abs (2dg-y delta))
+             ;; if you went through either slack add a new point with the slack
+             ;; that went over.
+             do (cond ((>= abs-delta-x slack-allowance-x)
+                       ;; X went over allowance.
+                       (if (>= abs-delta-y slack-allowance-y)
+                           ;; X and Y went over allowance.
+                           (push real-pt compacted-pts)
+                         ;; X went over but Y did not.
+                         (push (2dg-point :x (2dg-x real-pt) :y (2dg-y last-compacted-pt))
+                               compacted-pts))
+                       (incf num-compacted-pts)
+                       (setq last-compacted-pt (first compacted-pts)))
+                      ((>= abs-delta-y slack-allowance-y)
+                       ;; Y went over but X did not
+                       (push (2dg-point :x (2dg-x last-compacted-pt) :y (2dg-y real-pt))
+                             compacted-pts)
+                       (setq last-compacted-pt (first compacted-pts))
+                       (incf num-compacted-pts)))
+             do (setq last-path-pt real-pt
+                      num-pts (1+ num-pts)))
+    (if (2dg-almost-equal last-path-pt last-compacted-pt)
+        ;; end point matches, no additional work needed.
+        (nreverse compacted-pts)
+      ;; End point does not match, amend the first N points to handle this.
+      ;; note: if the list is only 2 elements long this will be impossible and
+      ;;       the path router needs to be called.
+      (if (>= num-compacted-pts 3)
+          (let* ((required-delta (2dg-subtract last-path-pt last-compacted-pt))
+                 (required-unit-vec (2dg-normalized required-delta))
+                 (failure))
+            ;; go through compacted-pts, adding this delta until you hit a segment
+            ;; wich you don't need to.
+            ;; TODO - this only takes direction into account, it could produce paths
+            ;;        that overlap themselves.  - handle that.
+            (cl-loop for reverse-path on compacted-pts
+                     for start-pt = (first reverse-path)
+                     for end-pt = (second reverse-path)
+                     ;; if you got to the end point and you're still trying
+                     ;; to correct things then this algorithm failed.
+                     unless (and end-pt)
+                     do (progn (setq failure t)
+                               (cl-return))
+                     for segment-char-vec = (2dg-subtract end-pt start-pt)
+                     for segment-unit-vec = (2dg-normalized segment-char-vec)
+
+                     ;; the start point *must* be moved.
+                     do (2dg-incf start-pt required-delta)
+
+                     ;; if the dot product is zero, then you have to move this point, it won't have freedom
+                     ;; in the required direction.
+                     do (unless (2dg-almost-zero (2dg-dot-prod required-unit-vec segment-unit-vec))
+                          (cl-return)))
+            (2dg-simplified (if failure
+                                path-pts
+                              (nreverse compacted-pts))))
+        ;; Only 2 points or less in the path. do not attepmt correction
+        ;; just give up
+        path-pts))))
+
+(cl-defgeneric 2dg-stretch (path (force-start 2dg-point) (force-end 2dg--point))
+  "Return a new path based off PATH stretched to match FORCE-START and FORCE-END.")
+(cl-defmethod 2dg-stretch ((points list) (force-start 2dg-point) (force-end 2dg-point))
+  "Return a new list of points based off POINTS being stretched to FORCE-START and FORCE-END.
+
+"
+  (2dg---path-stretch points force-start force-end))
 (defun 2dg---path-stretch (points force-start force-end)
   "Return a path (list) from FORCE-START to FORCE-END which 'feels' like POINTS.
 
@@ -635,17 +726,48 @@ have the desired start and end points."
           ;; recursion with (cdr path) and perpendicular-move
           (cons (2dg-add first-point move-vector)
                 (2dg---nudge-path-start (cdr points) perpendicular-move)))))))
-(cl-defmethod 2dg-nudge-path ((path list) (point-idx integer) (move-vector 2dg-point))
-  "Nudge POINT-IDX point in PATH by MOVE-VECTOR and update surrounding points."
-  (when (or (< point-idx 0) (>= point-idx (length path)))
-    (error "Error: point-idx must be < path length"))
-  (let ((before-path (list (first path)))
-        (after-path path))
+(defun 2dg--nudge-path (path-points point-idx move-vector)
+  "Path nudger."
+  (when (or (< point-idx 0) (>= point-idx (length path-points)))
+    (error "Error: point-idx must be < path-points length"))
+  (let ((before-path (list (first path-points)))
+        (after-path path-points))
     (dotimes (idx point-idx)
       (setq after-path (cdr after-path))
       (setq before-path (cons (first after-path) before-path)))
     (append (reverse (2dg---nudge-path-start before-path move-vector))
             (cdr (2dg---nudge-path-start after-path move-vector)))))
+
+(cl-defgeneric 2dg-nudge-path (path (point-idx integer) (move-vector 2dg-point))
+  "Nudge POINT-IDX point in PATH by MOVE-VECTOR and update surrounting points.
+
+Returns an updated path.")
+
+(cl-defmethod 2dg-nudge-path ((path 2dg-path) (point-idx integer) (move-vector 2dg-point))
+    "Nudge POINT-IDX point in PATH by MOVE-VECTOR and update surrounding points.
+
+There are no promises made that other points (other than at
+POINT-IDX) will stay static.  Specifically the starting and
+ending points may change even though a mid point was indicated by
+POINT-IDX.")
+
+(cl-defmethod 2dg-nudge-path ((path list) (point-idx integer) (move-vector 2dg-point))
+  "Nudge POINT-IDX point in PATH by MOVE-VECTOR and update surrounding points.
+
+There are no promises made that other points (other than at
+POINT-IDX) will stay static.  Specifically the starting and
+ending points may change even though a mid point was indicated by
+POINT-IDX."
+  (2dg--nudge-path path point-idx move-vector))
+  ;; (when (or (< point-idx 0) (>= point-idx (length path)))
+  ;;   (error "Error: point-idx must be < path length"))
+  ;; (let ((before-path (list (first path)))
+  ;;       (after-path path))
+  ;;   (dotimes (idx point-idx)
+  ;;     (setq after-path (cdr after-path))
+  ;;     (setq before-path (cons (first after-path) before-path)))
+  ;;   (append (reverse (2dg---nudge-path-start before-path move-vector))
+  ;;           (cdr (2dg---nudge-path-start after-path move-vector)))))
 
 (provide '2dg-path)
 ;;; 2dg-path.el ends here
