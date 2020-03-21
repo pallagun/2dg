@@ -220,24 +220,37 @@ proceeding counterclockwise around the rectangle."
 
 You have an intersection if A contains any end point of B or
 if any bounding segment of A intersects B."
-  (or (2dg-contains A (2dg-start B) evaluation-mode)
-      (2dg-contains A (2dg-end B) evaluation-mode)
-      (cond ((eq evaluation-mode 'strict) ;; must hit two segments
-             (cl-loop for rect-segment in (2dg-segments A)
-                      with num-hits = 0
-                      when (2dg-has-intersection rect-segment B 'stacked)
-                      do (incf num-hits)
-                      when (>= num-hits 2)
-                      return t))
-            ((eq evaluation-mode 'stacked) ;; must hit two segments OR Left OR bottom segment
-             (or (2dg-has-intersection (2dg-bottom A) B 'stacked) ;the bottom edge excluding BR
-                 (2dg-has-intersection (2dg-flipped (2dg-left A)) B 'stacked) ;the left edge excluding TL
-                 (and (2dg-has-intersection (2dg-right A) B 'strict) ;the right side without the ends
-                      (2dg-has-intersection (2dg-top A) B 'stacked)))) ;the top edge excluding TR
-            (t                          ;any hit anywhere is ok.
-             (cl-loop for rect-segment in (2dg-segments A)
-                      when (2dg-has-intersection rect-segment B)
-                      return t)))))
+  (let ((B-start (2dg-start B))
+        (B-end (2dg-end B)))
+    (cond
+     ;; If an end point is contained then the segment is contained.
+     ((or (2dg-contains A B-start evaluation-mode)
+          (2dg-contains A B-end evaluation-mode))
+      t)
+
+     ;; If both end points are on the same side of the rect and not
+     ;; touching it then this can't possibly be contaianed.
+     ((or (< (2dg-x-max A) (min (2dg-x B-start) (2dg-x B-end)))
+          (< (max (2dg-x B-start) (2dg-x B-end)) (2dg-x-min A))
+          (< (2dg-y-max A) (min (2dg-y B-start) (2dg-y B-end)))
+          (< (max (2dg-y B-start) (2dg-y B-end)) (2dg-y-min A)))
+      nil)
+     ((eq evaluation-mode 'strict) ;; must hit two segments
+      (cl-loop for rect-segment in (2dg-segments A)
+               with num-hits = 0
+               when (2dg-has-intersection rect-segment B 'stacked)
+               do (incf num-hits)
+               when (>= num-hits 2)
+               return t))
+     ((eq evaluation-mode 'stacked) ;; must hit two segments OR Left OR bottom segment
+      (or (2dg-has-intersection (2dg-bottom A) B 'stacked) ;the bottom edge excluding BR
+          (2dg-has-intersection (2dg-flipped (2dg-left A)) B 'stacked) ;the left edge excluding TL
+          (and (2dg-has-intersection (2dg-right A) B 'strict) ;the right side without the ends
+               (2dg-has-intersection (2dg-top A) B 'stacked)))) ;the top edge excluding TR
+     (t                          ;any hit anywhere is ok.
+      (cl-loop for rect-segment in (2dg-segments A)
+               when (2dg-has-intersection rect-segment B)
+               return t)))))
 (cl-defmethod 2dg-has-intersection ((A 2dg-rect) (B 2dg-rect) &optional evaluation-mode)
   "Return non-nil if A and B intersect."
   (and (2dg-has-intersection (2dg-x-span A) (2dg-x-span B) evaluation-mode)

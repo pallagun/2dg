@@ -13,7 +13,7 @@
                 (2dg-path :points (list (2dg-point- 30.5 22.0)
                                           (2dg-point- 30.500000000001 17.0))))))
     (mapcar (lambda (path)
-              (should (2dg---is-cardinal-path-p (2dg-points path))))
+              (should (2dg-is-cardinal-pts-list-p (2dg-points path))))
             paths)))
 
 (ert-deftest 2dg-path-cardinal ()

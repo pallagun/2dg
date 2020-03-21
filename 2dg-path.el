@@ -31,7 +31,7 @@
 (defun 2dg-cardinal-path-class-p (any)
   "equivalent of (object-of-class-p ANY '2dg-cardinal-path)"
   (object-of-class-p any '2dg-cardinal-path))
-(defun 2dg---is-cardinal-path-p (points-list)
+(defsubst 2dg-is-cardinal-pts-list-p (points-list)
   "Return non-nil if POINTS-LIST contains a list of cardinal path points."
   (cl-loop with last-pt = (first points-list)
            with is-cardinal = 't
@@ -47,7 +47,7 @@
   ;; TODO - should this be a :before method?
   (let ((points (plist-get slots :points)))
     (unless (or (null points)
-                (2dg---is-cardinal-path-p points))
+                (2dg-is-cardinal-pts-list-p points))
       (error "An 2dg-cardinal-path must have only vertical or horizontal segments")))
   (cl-call-next-method))
 
