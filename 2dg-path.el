@@ -567,41 +567,55 @@ less points.  Start and end points will be preserved exactly."
     (if (2dg-almost-equal last-path-pt last-compacted-pt)
         ;; end point matches, no additional work needed.
         (nreverse compacted-pts)
-      ;; End point does not match, amend the first N points to handle this.
-      ;; note: if the list is only 2 elements long this will be impossible and
-      ;;       the path router needs to be called.
-      (if (>= num-compacted-pts 3)
-          (let* ((required-delta (2dg-subtract last-path-pt last-compacted-pt))
-                 (required-unit-vec (2dg-normalized required-delta))
-                 (failure))
-            ;; go through compacted-pts, adding this delta until you hit a segment
-            ;; wich you don't need to.
-            ;; TODO - this only takes direction into account, it could produce paths
-            ;;        that overlap themselves.  - handle that.
-            (cl-loop for reverse-path on compacted-pts
-                     for start-pt = (first reverse-path)
-                     for end-pt = (second reverse-path)
-                     ;; if you got to the end point and you're still trying
-                     ;; to correct things then this algorithm failed.
-                     unless (and end-pt)
-                     do (progn (setq failure t)
-                               (cl-return))
-                     for segment-char-vec = (2dg-subtract end-pt start-pt)
-                     for segment-unit-vec = (2dg-normalized segment-char-vec)
+      (cond ((let ((remaining-delta (2dg-subtract last-compacted-pt last-path-pt)))
+               (and (2dg-cardinal-direction-vector-p remaining-delta)
+                    (< (2dg-x remaining-delta) slack-allowance-x)
+                    (< (2dg-y remaining-delta) slack-allowance-y)))
+             ;; The last point you compacted is one single cardinal
+             ;; segment away from the true path end.  Additionally it's
+             ;; sufficiently close.  Simply push the path end on and
+             ;; complete.
+             (nreverse (cons last-path-pt compacted-pts)))
+            ((>= num-compacted-pts 3)
+             ;; End point does not match, amend the first N points to handle this.
+             ;; note: if the list is only 2 elements long this will be impossible and
+             ;;       the path router needs to be called.
+             (let* ((required-delta (2dg-subtract last-path-pt last-compacted-pt))
+                    (required-unit-vec (2dg-normalized required-delta))
+                    (failure))
+               ;; go through compacted-pts, adding this delta until you hit a segment
+               ;; wich you don't need to.
+               ;; TODO - this only takes direction into account, it could produce paths
+               ;;        that overlap themselves.  - handle that.
+               (cl-loop for reverse-path on compacted-pts
+                        for start-pt = (first reverse-path)
+                        for end-pt = (second reverse-path)
+                        ;; if you got to the end point and you're still trying
+                        ;; to correct things then this algorithm failed.
+                        unless (and end-pt)
+                        do (progn (setq failure t)
+                                  (cl-return))
+                        for segment-char-vec = (2dg-subtract end-pt start-pt)
+                        for segment-unit-vec = (2dg-normalized segment-char-vec)
 
-                     ;; the start point *must* be moved.
-                     do (2dg-incf start-pt required-delta)
+                        ;; the start point *must* be moved.
+                        do (2dg-incf start-pt required-delta)
 
-                     ;; if the dot product is zero, then you have to move this point, it won't have freedom
-                     ;; in the required direction.
-                     do (unless (2dg-almost-zero (2dg-dot-prod required-unit-vec segment-unit-vec))
-                          (cl-return)))
-            (2dg-simplified (if failure
-                                path-pts
-                              (nreverse compacted-pts))))
-        ;; Only 2 points or less in the path. do not attepmt correction
-        ;; just give up
-        path-pts))))
+                        ;; if the dot product is zero, then you have to move this point, it won't have freedom
+                        ;; in the required direction.
+                        do (unless (2dg-almost-zero (2dg-dot-prod required-unit-vec segment-unit-vec))
+                             (cl-return)))
+               (2dg-simplified (if failure
+                                   path-pts
+                                 (nreverse compacted-pts)))))
+            (t
+             ;; There are 2 points or less in the path.  If this can be
+             ;; completed With a single path segment then that's ok,
+             ;; Otherwise, fail.
+             ;; Only 2 points or less in the path, and no cardinal
+             ;; displacement segment is a valid completion. Just give up
+             ;; for now.
+             path-pts)))))
 
 (cl-defgeneric 2dg-stretch (path (force-start 2dg-point) (force-end 2dg--point))
   "Return a new path based off PATH stretched to match FORCE-START and FORCE-END.")

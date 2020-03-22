@@ -1,6 +1,11 @@
 (require 'ert)
 (require '2dg-path)
 
+(defun pts-almost-equal (A B)
+  (2dg-almost-equal
+   (2dg-path :points A)
+   (2dg-path :points B)))
+
 (ert-deftest 2dg-path-is-cardinal-path? ()
   ;; Needs to say that a path with a single point is indeed cardinal
   (let ((paths (list
@@ -408,5 +413,45 @@
              (2dg-build-path-straight-line start cardinal-end)))
     (should (2dg-path-p
              (2dg-build-path-straight-line start end)))))
+
+(ert-deftest 2dg-slack-simplified ()
+  (let ((input '(#s(2dg-point 54.0 22.0)
+                 #s(2dg-point 56.5 22.0)
+                 #s(2dg-point 56.5 21.0)
+                 #s(2dg-point 59.0 21.0)
+                 #s(2dg-point 59.0 23.0)))
+        (expected (list (2dg-point- 54 22)
+                        (2dg-point- 56.5 22)
+                        (2dg-point- 59 22)
+                        (2dg-point- 59 23))))
+    (should (pts-almost-equal
+             (2dg-slack-simplified input 2.0 2.0)
+             expected)))
+  (let ((input (list (2dg-point- 0 0)
+                     (2dg-point- 1 0.1)
+                     (2dg-point- 2 0.1)
+                     (2dg-point- 3 0)))
+        (expected (list (2dg-point- 0 0)
+                        (2dg-point- 1 0)
+                        (2dg-point- 2 0)
+                        (2dg-point- 3 0))))
+    (should (pts-almost-equal
+             (2dg-slack-simplified input 1.0 1.0)
+             expected)))
+  (let ((input '(#s(2dg-point 54.0 22.0)
+                 #s(2dg-point 55.5 22.0)
+                 #s(2dg-point 55.5 21.0)
+                 #s(2dg-point 57.0 21.0)
+                 #s(2dg-point 57.0 23.0)))
+        (expected (list (2dg-point- 54 22)
+                        (2dg-point- 57 22)
+                        (2dg-point- 57.0 23))))
+    (should (pts-almost-equal
+             (2dg-slack-simplified input 2.0 2.0)
+             expected)))
+
+
+
+  )
 
 (provide '2dg-path-test)
