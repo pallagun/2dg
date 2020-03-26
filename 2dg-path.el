@@ -65,6 +65,8 @@
 (cl-defmethod 2dg-num-points ((path 2dg-path))
   "Return the number of points that make up PATH."
   (length (oref path points)))
+(cl-defgeneric 2dg-nth ((path 2dg-path) (N number))
+  "Return the N-th point from PATH.")
 (cl-defmethod 2dg-nth ((path 2dg-path) (N number))
   "Return the N-th point from PATH."
   (nth N (oref path points)))
@@ -86,7 +88,7 @@ May return nil if PATH contains 1 or less points."
 
 May return nil if PATH contains 1 or less points."
   (let ((num-pts (2dg-num-points path)))
-    (when (> num-pts 2)
+    (when (> num-pts 1)
       (2dg-subtract (2dg-nth path (1- num-pts))
                       (2dg-nth path (- num-pts 2))))))
 (cl-defmethod 2dg-push ((path 2dg-path) (pt 2dg-point))

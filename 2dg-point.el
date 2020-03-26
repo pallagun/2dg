@@ -91,7 +91,7 @@ RHR => Right Hand Rule."
 (cl-defmethod 2dg-scaled ((A 2dg-point) alpha)
   "Return A scaled by ALPHA."
   (2dg-point :x (* alpha (2dg-x A))
-               :y (* alpha (2dg-y A))))
+             :y (* alpha (2dg-y A))))
 (cl-defmethod 2dg-scaled ((A 2dg-point) (per-dimension-alpha 2dg-point))
   "Scale A by PER-DIMENSION-ALPHA (scale x by x and y by y)."
   (2dg-point :x (* (2dg-x A) (2dg-x per-dimension-alpha))

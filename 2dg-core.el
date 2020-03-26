@@ -11,7 +11,7 @@
   "Used for things like \"Are you close enough to zero?\".")
 
 (defsubst 2dg-reverse (direction)
-  "Return the reverse direction of DIRECTION.
+  "Return the reverse direction of DIRECTION symbol.
 
 DIRECTION should be a symbol in the set [up, down, left, right]."
   (cond ((eq direction 'up) 'down)
