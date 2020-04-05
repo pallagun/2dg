@@ -94,6 +94,9 @@ May return nil if PATH contains 1 or less points."
 (cl-defmethod 2dg-push ((path 2dg-path) (pt 2dg-point))
   "Modify PATH by pushing PT on to the start."
   (push pt (2dg-points path)))
+(defsubst 2dg--path-pts-truncate-1 (points-list)
+  "Remove 1 point from the start and one point from the end of POINTS-LIST."
+  (butlast (cdr points-list)))
 (defsubst 2dg--path-list-truncate (points start-points end-points)
   "Return a copy of POINTS with START-POINTS and END-POINTS trimmed off the start/end."
   (butlast (nthcdr start-points points) end-points))

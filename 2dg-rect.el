@@ -238,7 +238,7 @@ if any bounding segment of A intersects B."
      ((eq evaluation-mode 'strict) ;; must hit two segments
       (cl-loop for rect-segment in (2dg-segments A)
                with num-hits = 0
-               when (2dg-has-intersection rect-segment B 'stacked)
+               when (2dg-has-intersection rect-segment B 'strict)
                do (incf num-hits)
                when (>= num-hits 2)
                return t))
@@ -246,7 +246,7 @@ if any bounding segment of A intersects B."
       (or (2dg-has-intersection (2dg-bottom A) B 'stacked) ;the bottom edge excluding BR
           (2dg-has-intersection (2dg-flipped (2dg-left A)) B 'stacked) ;the left edge excluding TL
           (and (2dg-has-intersection (2dg-right A) B 'strict) ;the right side without the ends
-               (2dg-has-intersection (2dg-top A) B 'stacked)))) ;the top edge excluding TR
+               (2dg-has-intersection (2dg-flipped (2dg-top A)) B 'stacked)))) ;the top edge excluding TR
      (t                          ;any hit anywhere is ok.
       (cl-loop for rect-segment in (2dg-segments A)
                when (2dg-has-intersection rect-segment B)
