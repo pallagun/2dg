@@ -36,7 +36,8 @@ typing."
             :y-max (float y-max)))
 (defsubst 2dg-rect-class-p (any)
   "Same as (object-of-class-p ANY '2dg-rect)."
-  (object-of-class-p any '2dg-rect))
+  (and (recordp any)
+       (object-of-class-p any '2dg-rect)))
 (cl-defmethod 2dg-pprint ((rect 2dg-rect))
   "Return a stringified version of RECT for human eyes."
   (with-slots (x-min x-max y-min y-max) rect
@@ -215,6 +216,13 @@ proceeding counterclockwise around the rectangle."
 (cl-defmethod 2dg-has-intersection ((A 2dg-rect) (B 2dg-point) &optional evaluation-mode)
   "Return non-nil if A and B intersect."
   (2dg-contains A B evaluation-mode))
+(cl-defmethod 2dg-has-intersection ((A 2dg-point) (B 2dg-rect) &optional evaluation-mode)
+  "Return non-nil if A and B intersect."
+  (cond ((or (null evaluation-mode)
+             (eq evaluation-mode 'strict))
+         (2dg-has-intersection B A evaluation-mode))
+        (t
+         (error "2dg-has-intersection: Currently unable to handle pt/rect with evaluation mode which is not strict"))))
 (cl-defmethod 2dg-has-intersection ((A 2dg-rect) (B 2dg-segment) &optional evaluation-mode)
   "Return non-nil if A and B intersect.
 
