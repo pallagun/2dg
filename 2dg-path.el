@@ -761,7 +761,6 @@ have the desired start and end points."
   "Nudge POINT-IDX point in PATH by MOVE-VECTOR and update surrounting points.
 
 Returns an updated path.")
-
 (cl-defmethod 2dg-nudge-path ((path 2dg-path) (point-idx integer) (move-vector 2dg-point))
     "Nudge POINT-IDX point in PATH by MOVE-VECTOR and update surrounding points.
 
@@ -769,7 +768,6 @@ There are no promises made that other points (other than at
 POINT-IDX) will stay static.  Specifically the starting and
 ending points may change even though a mid point was indicated by
 POINT-IDX.")
-
 (cl-defmethod 2dg-nudge-path ((path list) (point-idx integer) (move-vector 2dg-point))
   "Nudge POINT-IDX point in PATH by MOVE-VECTOR and update surrounding points.
 

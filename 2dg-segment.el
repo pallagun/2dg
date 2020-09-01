@@ -366,7 +366,6 @@ That should be sorted out before calling this."
           'nil)))))
 (cl-defmethod 2dg-coarse-direction ((segment 2dg-segment))
   (2dg-coarse-direction (2dg-characteristic-vector segment)))
-
 (cl-defmethod 2dg-get-closest-parametric ((segment 2dg-segment) (pt 2dg-point) &optional bounded)
   "Get the parametric coordinate of the closest point along SEGMENT to PT.
 
@@ -380,7 +379,6 @@ Output is bounded to be between [0, 1] inclusive when BOUNDED is t."
       (if bounded
           (min (max parametric 0.0) 1.0)
         parametric))))
-
 (cl-defmethod 2dg-absolute-coordinates ((base-segment 2dg-segment) (coordinate number))
   "Return the point along BASE-SEGMENT at the segments parametric COORDINATE."
   (with-slots (start) base-segment
@@ -393,7 +391,6 @@ Output is bounded to be between [0, 1] inclusive when BOUNDED is t."
     (with-slots (start) base-segment
       (2dg-segment :start (2dg-add start (2dg-scaled char-vec (2dg-start coordinates)))
                    :end (2dg-add start (2dg-scaled char-vec (2dg-end coordinates)))))))
-
 (cl-defmethod 2dg-get-parametric ((segment 2dg-segment) (pt 2dg-point) &optional distance-tolerance)
   "Get the parametric coordinate of PT along SEGMENT.
 
