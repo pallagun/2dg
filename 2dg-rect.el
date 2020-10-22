@@ -38,6 +38,12 @@ typing."
   "Same as (object-of-class-p ANY '2dg-rect)."
   (and (recordp any)
        (object-of-class-p any '2dg-rect)))
+(defsubst 2dg-rect-set-from (dest-rect src-rect)
+  "Set the coordinates of DEST-RECT to match SRC-RECT."
+  (oset dest-rect x-min (oref src-rect x-min))
+  (oset dest-rect x-max (oref src-rect x-max))
+  (oset dest-rect y-min (oref src-rect y-min))
+  (oset dest-rect y-max (oref src-rect y-max)))
 (cl-defmethod 2dg-pprint ((rect 2dg-rect))
   "Return a stringified version of RECT for human eyes."
   (with-slots (x-min x-max y-min y-max) rect
